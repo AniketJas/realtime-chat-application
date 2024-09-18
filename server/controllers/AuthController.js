@@ -1,4 +1,4 @@
-import User from "../models/UserModel";
+import User from "../models/UserModel.js";
 import jwt from "jsonwebtoken";
 
 const maxAge = 3 * 24 * 60 * 60 * 1000;
@@ -11,13 +11,13 @@ const createToken = (email, userId) => {
 
 export const signup = async (request, response, next) => {
   try {
-    const { email, password } = request.body();
+    const { email, password } = request.body;
 
     if (!email || !password) {
       return response.status(400).send("Email and Password is required.");
     }
 
-    const user = User.create({ email, password });
+    const user = await User.create({ email, password });
     response.cookie("jwt", createToken(email, user._id), {
       maxAge,
       secure: true,
@@ -27,11 +27,12 @@ export const signup = async (request, response, next) => {
     return response.status(201).json({
       user: {
         id: user._id,
-        email: email,
+        email: user.email,
         profileSetup: user.profileSetup,
       },
     });
   } catch (error) {
+    console.log(error);
     return response.status(500).send("Internal Server Error");
   }
 };
