@@ -5,13 +5,29 @@ import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useState } from "react";
 import { toast } from "sonner";
-import { SIGNUP_ROUTES } from "@/utils/constants";
+import { SIGNUP_ROUTES, LOGIN_ROUTES } from "@/utils/constants";
 import apiClient from "@/lib/api-client";
+import { useNavigate } from "react-router-dom";
+import { useAppStore } from "@/store";
 
 const Auth = () => {
+  const navigate = useNavigate();
+  const { setUserInfo } = useAppStore();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+
+  const validateLogin = () => {
+    if (!email.length) {
+      toast.error("Email is required.");
+      return false;
+    }
+    if (!password.length) {
+      toast.error("Password is required.");
+      return false;
+    }
+    return true;
+  };
 
   const validateSignup = () => {
     if (!email.length) {
@@ -29,10 +45,36 @@ const Auth = () => {
     return true;
   };
 
-  const handleLogin = async () => {};
+  const handleLogin = async () => {
+    if (validateLogin()) {
+      const response = await apiClient.post(
+        LOGIN_ROUTES,
+        { email, password },
+        { withCredentials: true }
+      );
+      if (response.data.user.id) {
+        setUserInfo(response.data.user);
+        if (response.data.user.profileSetup) {
+          navigate("/chat");
+        } else {
+          navigate("/profile");
+        }
+      }
+      console.log({ response });
+    }
+  };
+
   const handleSignup = async () => {
     if (validateSignup()) {
-      const response = await apiClient.post(SIGNUP_ROUTES, { email, password });
+      const response = await apiClient.post(
+        SIGNUP_ROUTES,
+        { email, password },
+        { withCredentials: true }
+      );
+      if (response.status === 201) {
+        setUserInfo(response.data.user);
+        navigate("/profile");
+      }
       console.log({ response });
     }
   };
